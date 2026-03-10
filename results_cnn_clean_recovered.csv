@@ -1,0 +1,2 @@
+model,dataset,target_column,group_column,seed,batch_size,num_epochs_max,learning_rate,weight_decay,sample_rate,duration,n_mels,n_train,n_val,n_test,val_f1_best,test_loss,test_f1_macro,training_time_s
+AudioCNN Clean + Recovered,FMA Small,track_genre_top,artist_name,42,32,80,0.001,0.0001,22050,30.0,128,6481,723,790,0.5813239830454997,1.4119542806963377,0.5535617648966997,919.5200226306915
