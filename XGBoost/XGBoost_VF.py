@@ -1,14 +1,14 @@
 """
 =================================================================================
-XGBoost V1 - CONTRAT D'EXPÉRIENCE PARTAGÉ
+XGBoost V2 - CONTRAT D'EXPÉRIENCE PARTAGÉ (GRIDSEARCH)
 =================================================================================
 PARAMÈTRES FIXES (communs à tous les modèles):
   - Seed              : 42
-  - Split             : GroupShuffleSplit 80/20 par artiste
-  - Preprocessing     : SimpleImputer(median) dans Pipeline
+  - Split             : GroupShuffleSplit 80/20 par artiste (indices sauvegardés)
+  - Preprocessing     : SimpleImputer(median) + RobustScaler dans Pipeline
   - Métrique          : F1 Macro
   - Features          : 351 features audio
-  - Validation        : GroupKFold 5-fold
+  - Validation        : GroupKFold 5-fold (intégré dans GridSearchCV)
   - Pondération       : compute_sample_weight('balanced')
 """
 
@@ -20,9 +20,9 @@ warnings.filterwarnings('ignore')
 
 from pathlib import Path
 
-from sklearn.model_selection import GroupShuffleSplit, GroupKFold
+from sklearn.model_selection import GroupShuffleSplit, GroupKFold, GridSearchCV
 from sklearn.base import clone
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, RobustScaler
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import (f1_score, classification_report, confusion_matrix,
@@ -42,10 +42,10 @@ METRIC     = 'f1_macro'
 
 BASE            = Path.cwd()
 FEATURES_V2_CSV = BASE / 'Data' / 'features_V2.csv'
-RESULTS_PATH    = BASE / 'XGBoost' / 'results_V1.csv'
+RESULTS_PATH    = BASE / 'XGBoost' / 'results_V2.csv'
 
 print("=" * 90)
-print("XGBoost V1 - CONTRAT D'EXPÉRIENCE PARTAGÉ")
+print("XGBoost V2 - CONTRAT D'EXPÉRIENCE PARTAGÉ (GRIDSEARCH)")
 print("=" * 90)
 print(f"\n📋 PARAMÈTRES:")
 print(f"   Seed                   : {SEED}")
@@ -53,8 +53,8 @@ print(f"   Split train/test       : {TRAIN_SIZE*100:.0f}% / {TEST_SIZE*100:.0f}%
 print(f"   Stratégie de split     : GroupShuffleSplit par artiste")
 print(f"   Validation croisée     : GroupKFold ({CV_FOLDS} folds)")
 print(f"   Métrique principale    : {METRIC}")
-print(f"   Preprocessing          : SimpleImputer(median) dans Pipeline")
-print(f"   Scaling                : Aucun")
+print(f"   Preprocessing          : SimpleImputer(median) + RobustScaler")
+print(f"   Recherche paramètres   : GridSearchCV")
 
 np.random.seed(SEED)
 
@@ -109,7 +109,7 @@ print(f"\n   Artistes uniques           : {unique_artists}")
 print(f"   Pistes par artiste (moy.)  : {len(groups) / unique_artists:.1f}")
 
 # =================================================================================
-# ÉTAPE 3: DIVISION TRAIN/TEST
+# ÉTAPE 3: DIVISION TRAIN/TEST ET SAUVEGARDE DES INDICES
 # =================================================================================
 print(f"\n{'=' * 90}")
 print("ÉTAPE 3: DIVISION TRAIN/TEST")
@@ -117,6 +117,22 @@ print(f"{'=' * 90}")
 
 gss = GroupShuffleSplit(n_splits=1, test_size=TEST_SIZE, random_state=SEED)
 train_idx, test_idx = next(gss.split(X, y_enc, groups=groups))
+
+# Sauvegarde des indices avec vérification d'écrasement
+data_dir = BASE / 'Data'
+data_dir.mkdir(parents=True, exist_ok=True)
+
+train_path = data_dir / 'train_idx.npy'
+test_path = data_dir / 'test_idx.npy'
+
+print("\n   Vérification des fichiers d'indices :")
+if train_path.exists():
+    print(f"   ⚠️ Écrasement du fichier existant : {train_path.name}")
+if test_path.exists():
+    print(f"   ⚠️ Écrasement du fichier existant : {test_path.name}")
+
+np.save(train_path, train_idx)
+np.save(test_path, test_idx)
 
 X_train_raw  = X.iloc[train_idx]
 X_test_raw   = X.iloc[test_idx]
@@ -129,18 +145,16 @@ overlap = len(set(groups[train_idx]) & set(groups[test_idx]))
 print(f"\n   Train          : {len(train_idx)} pistes ({len(train_idx)/len(y_enc)*100:.1f}%)")
 print(f"   Test           : {len(test_idx)} pistes ({len(test_idx)/len(y_enc)*100:.1f}%)")
 print(f"   Artistes communs train/test : {overlap}")
+print(f"   Indices sauvegardés dans : {data_dir}")
 
 # =================================================================================
-# ÉTAPE 4: PIPELINE
+# ÉTAPE 4: PIPELINE DE BASE
 # =================================================================================
 print(f"\n{'=' * 90}")
 print("ÉTAPE 4: CONSTRUCTION DU PIPELINE")
 print(f"{'=' * 90}")
 
-xgb_params = {
-    "n_estimators"  : 300,
-    "learning_rate" : 0.1,
-    "max_depth"     : 6,
+xgb_base_params = {
     "objective"     : "multi:softprob",
     "num_class"     : len(le.classes_),
     "tree_method"   : "hist",
@@ -151,32 +165,54 @@ xgb_params = {
 
 pipe_xgb = Pipeline([
     ('imputer', SimpleImputer(strategy='median')),
-    ('clf',     XGBClassifier(**xgb_params))
+    ('scaler',  RobustScaler()), # Ajouté pour respecter le contrat global
+    ('clf',     XGBClassifier(**xgb_base_params))
 ])
 
-print(f"\n   Pipeline       : SimpleImputer(median) → XGBClassifier")
-print(f"\n   Paramètres XGBClassifier:")
-for param, value in xgb_params.items():
-    print(f"      {param:20s}: {value}")
+print(f"\n   Pipeline       : SimpleImputer(median) → RobustScaler → XGBClassifier")
 
 # =================================================================================
-# ÉTAPE 5: ENTRAÎNEMENT
+# ÉTAPE 5: ENTRAÎNEMENT & GRIDSEARCH
 # =================================================================================
 print(f"\n{'=' * 90}")
-print("ÉTAPE 5: ENTRAÎNEMENT")
+print("ÉTAPE 5: RECHERCHE D'HYPERPARAMÈTRES (GRIDSEARCH)")
 print(f"{'=' * 90}")
+
+# Grille de paramètres définie par l'équipe
+param_grid = {
+    'clf__n_estimators': [100, 300, 500],
+    'clf__max_depth': [10, 20, 30],
+    'clf__min_child_weight': [4, 8] # Équivalent XGBoost du 'min_samples_leaf'
+}
+
+gkf_grid = GroupKFold(n_splits=CV_FOLDS)
+
+grid_search = GridSearchCV(
+    estimator=pipe_xgb,
+    param_grid=param_grid,
+    cv=gkf_grid,
+    scoring=METRIC,
+    n_jobs=-1,
+    verbose=2 # Permet de voir l'avancement dans la console
+)
 
 sw = compute_sample_weight('balanced', y_train)
 
 print(f"\n   Pondération des classes : compute_sample_weight('balanced')")
 print(f"   Pistes en entraînement  : {len(X_train_raw)}")
-print(f"\n⏳ Entraînement en cours...")
+print(f"   Grille de paramètres    : {param_grid}")
+print(f"\n⏳ Entraînement GridSearch en cours (cela peut prendre du temps)...")
 
 start_train = time.time()
-pipe_xgb.fit(X_train_raw, y_train, clf__sample_weight=sw)
+# On passe bien les groupes pour le GroupKFold interne, et les poids pour XGBoost
+grid_search.fit(X_train_raw, y_train, groups=groups_train, clf__sample_weight=sw)
 duration_train = time.time() - start_train
 
-print(f"✅ Entraînement terminé en {duration_train:.2f}s ({len(X_train_raw)/duration_train:.0f} pistes/s)")
+best_pipe_xgb = grid_search.best_estimator_
+
+print(f"\n✅ Entraînement terminé en {duration_train:.2f}s")
+print(f"   Meilleurs paramètres : {grid_search.best_params_}")
+print(f"   Meilleur score CV F1 : {grid_search.best_score_:.4f}")
 
 # =================================================================================
 # ÉTAPE 6: PRÉDICTIONS
@@ -186,8 +222,8 @@ print("ÉTAPE 6: PRÉDICTIONS SUR LE SET DE TEST")
 print(f"{'=' * 90}")
 
 start_pred  = time.time()
-preds       = pipe_xgb.predict(X_test_raw)
-preds_proba = pipe_xgb.predict_proba(X_test_raw)
+preds       = best_pipe_xgb.predict(X_test_raw)
+preds_proba = best_pipe_xgb.predict_proba(X_test_raw)
 duration_pred = time.time() - start_pred
 
 print(f"\n   Pistes prédites    : {len(preds)}")
@@ -213,37 +249,25 @@ print(f"   ║  Balanced Accuracy : {bal_acc:.4f}          ║")
 print(f"   ╚══════════════════════════════════════╝")
 
 # =================================================================================
-# ÉTAPE 8: VALIDATION CROISÉE
+# ÉTAPE 8: VALIDATION CROISÉE (DÉDUITE DU GRIDSEARCH)
 # =================================================================================
 print(f"\n{'=' * 90}")
-print("ÉTAPE 8: VALIDATION CROISÉE — GroupKFold(5)")
+print("ÉTAPE 8: VALIDATION CROISÉE — Résultats du meilleur modèle")
 print(f"{'=' * 90}")
 
-gkf = GroupKFold(n_splits=CV_FOLDS)
-
-print(f"\n⏳ Validation croisée en cours...")
-start_cv  = time.time()
+# Au lieu de relancer la CV complète, on extrait les scores du meilleur modèle testé par GridSearchCV
+best_index = grid_search.best_index_
+cv_results = grid_search.cv_results_
 cv_scores = []
 
-for fold_idx, (tr_idx, val_idx) in enumerate(gkf.split(X_train_raw, y_train, groups=groups_train), 1):
-    X_fold_train = X_train_raw.iloc[tr_idx]
-    X_fold_val   = X_train_raw.iloc[val_idx]
-    y_fold_train = y_train[tr_idx]
-    y_fold_val   = y_train[val_idx]
+print(f"\n   Scores obtenus par le meilleur modèle lors des {CV_FOLDS} folds du GridSearch:")
+for i in range(CV_FOLDS):
+    fold_score = cv_results[f'split{i}_test_score'][best_index]
+    cv_scores.append(fold_score)
+    print(f"   Fold {i+1}: {fold_score:.4f}")
 
-    sw_fold   = compute_sample_weight('balanced', y_fold_train)
-    pipe_fold = clone(pipe_xgb)
-    pipe_fold.fit(X_fold_train, y_fold_train, clf__sample_weight=sw_fold)
+cv_scores = np.array(cv_scores)
 
-    preds_fold = pipe_fold.predict(X_fold_val)
-    score      = f1_score(y_fold_val, preds_fold, average='macro')
-    cv_scores.append(score)
-    print(f"   Fold {fold_idx}: {score:.4f}")
-
-cv_scores   = np.array(cv_scores)
-duration_cv = time.time() - start_cv
-
-print(f"\n   Terminé en {duration_cv:.2f}s")
 print(f"\n   Moyenne : {cv_scores.mean():.4f}")
 print(f"   Std dev : {cv_scores.std():.4f}")
 print(f"   Min     : {cv_scores.min():.4f}")
@@ -289,7 +313,8 @@ print(f"\n{'=' * 90}")
 print("ÉTAPE 11: IMPORTANCE DES FEATURES")
 print(f"{'=' * 90}")
 
-xgb_clf    = pipe_xgb.named_steps['clf']
+# Extraction de XGBoost depuis le MEILLEUR pipeline
+xgb_clf = best_pipe_xgb.named_steps['clf']
 importances = xgb_clf.feature_importances_
 
 feature_importance_df = pd.DataFrame({
@@ -297,7 +322,7 @@ feature_importance_df = pd.DataFrame({
     'Importance': importances
 }).sort_values(by='Importance', ascending=False)
 
-print(f"\n   Top 15 features:")
+print(f"\n   Top 15 features (sur {len(X_train_raw.columns)}):")
 for _, row in feature_importance_df.head(15).iterrows():
     bar = "█" * int(row['Importance'] * 100)
     print(f"   {row['Feature']:30s} {bar} {row['Importance']:.4f}")
@@ -312,7 +337,7 @@ print(f"{'=' * 90}")
 fig, ax = plt.subplots(figsize=(12, 10))
 disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=le.classes_)
 disp.plot(cmap="Blues", ax=ax, xticks_rotation=45, values_format='d')
-plt.title(f"Matrice de Confusion — XGBoost V1 (F1={f1_test:.4f})", fontsize=14, fontweight='bold')
+plt.title(f"Matrice de Confusion — XGBoost V2 (F1={f1_test:.4f})", fontsize=14, fontweight='bold')
 plt.tight_layout()
 plt.show()
 
@@ -324,7 +349,7 @@ print("ÉTAPE 13: TABLEAU DE RÉSULTATS")
 print(f"{'=' * 90}\n")
 
 results_comparison = pd.DataFrame([{
-    'Modèle'                  : 'XGBoost V1',
+    'Modèle'                  : 'XGBoost V2 (GridSearch)',
     'F1 Macro (test)'         : f"{f1_test:.4f}",
     'Accuracy (test)'         : f"{accuracy_test:.4f}",
     'Balanced Accuracy (test)': f"{bal_acc:.4f}",
@@ -334,9 +359,8 @@ results_comparison = pd.DataFrame([{
     'Seed'                    : SEED,
     'Split'                   : f"{TRAIN_SIZE*100:.0f}/20",
     'CV Folds'                : f"GroupKFold({CV_FOLDS})",
-    'Preprocessing'           : 'SimpleImputer(median)',
-    'Scaling'                 : 'Aucun',
-    'n_estimators'            : xgb_params['n_estimators'],
+    'Preprocessing'           : 'SimpleImputer(median) + RobustScaler',
+    'Best Parameters'         : str(grid_search.best_params_),
     'Pistes train'            : len(X_train_raw),
     'Pistes test'             : len(X_test_raw),
     'Features'                : X_train_raw.shape[1],
@@ -345,8 +369,13 @@ results_comparison = pd.DataFrame([{
 print(results_comparison.to_string(index=False))
 
 RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+print("\n   Vérification du fichier de résultats :")
+if RESULTS_PATH.exists():
+    print(f"   ⚠️ Écrasement du fichier existant : {RESULTS_PATH.name}")
+
 results_comparison.to_csv(RESULTS_PATH, index=False)
-print(f"\n   Résultats sauvegardés : {RESULTS_PATH}")
+print(f"   ✅ Résultats sauvegardés : {RESULTS_PATH}")
 
 # =================================================================================
 # RÉSUMÉ FINAL
@@ -359,10 +388,11 @@ print(f"   F1 Macro (test)         : {f1_test:.4f}")
 print(f"   Accuracy (test)         : {accuracy_test:.4f}")
 print(f"   Balanced Accuracy       : {bal_acc:.4f}")
 print(f"   F1 CV moyenne           : {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
-print(f"   Temps entraînement      : {duration_train:.2f}s")
+print(f"   Temps GridSearchCV      : {duration_train:.2f}s")
+print(f"   Meilleurs paramètres    : {grid_search.best_params_}")
 print(f"   Features utilisées      : {X_train_raw.shape[1]}")
 print(f"   Pistes train / test     : {len(X_train_raw)} / {len(X_test_raw)}")
 
 print(f"\n{'=' * 90}")
-print("✅ PIPELINE XGBOOST V1 TERMINÉ")
+print("✅ PIPELINE XGBOOST V2 TERMINÉ")
 print(f"{'=' * 90}\n")
