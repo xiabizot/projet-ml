@@ -1,0 +1,2 @@
+model,f1_test,acc_test,bal_acc_test,f1_cv_mean,f1_cv_std,duration_s,seed,split,imputer,scaler,n_features,n_train,n_test,dataset
+CNN_logmel,0.5366,0.5734,0.536,0,0,6939.2,42,GroupShuffleSplit,None,None,128x1291,6481,790,FMA_Small
