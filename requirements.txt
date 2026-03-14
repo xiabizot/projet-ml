@@ -1,0 +1,22 @@
+# Projet ML2 — Classification de genres musicaux FMA
+# Python 3.10+
+
+# Core
+numpy
+pandas
+scipy
+
+# Visualisation
+matplotlib
+seaborn
+
+# Machine Learning
+scikit-learn
+xgboost
+
+# Audio
+librosa
+
+# Deep Learning (CPU — pour GPU voir README)
+torch
+tqdm
