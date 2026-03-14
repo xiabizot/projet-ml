@@ -1,4 +1,4 @@
-model,f1_test,acc_test,bal_acc_test,f1_cv_mean,f1_cv_std,duration_s,seed,split,imputer,scaler,n_features,n_train,n_test,dataset,task,coverage_topk,f1_micro_ml,f1_macro_ml,f1_samples_ml,hamming_loss,precision_at_3,f1_mismatch_coh,f1_mismatch_amb
-XGBoost_top1_genre,0.5022,0.5109,0.5057,0,0,0,42,GroupShuffleSplit,median,RobustScaler,351,6477,1517,FMA_Small,genre_top classification,,,,,,,0.5124,0.438
-XGBoost_top3_genre,0.5022,0.5109,0.5057,0,0,0,42,GroupShuffleSplit,median,RobustScaler,351,6477,1517,FMA_Small,top-3 coverage genre_top,0.8134,,,,,,0.5124,0.438
-XGBoost_OneVsRest_multilabel,,,,0,0,0,42,GroupShuffleSplit,median,RobustScaler,351,6477,1517,FMA_Small,multi-label sous-genres,,0.1687,0.1154,0.0876,0.0404,0.2061,,
+model,f1_test,acc_test,bal_acc_test,f1_cv_mean,f1_cv_std,duration_s,seed,split,imputer,scaler,n_features,n_train,n_test,dataset,task,best_params,coverage_topk,f1_micro_ml,f1_macro_ml,f1_samples_ml,hamming_loss,precision_at_3,f1_mismatch_coh,f1_mismatch_amb
+XGBoost_top1_genre,0.51,0.5201,0.514,0.5134,0.0142,939.2,42,GroupShuffleSplit,median,RobustScaler,351,6477,1517,FMA_Small,genre_top classification,"{'clf__max_depth': 30, 'clf__min_child_weight': 8, 'clf__n_estimators': 300}",,,,,,,0.5274,0.4312
+XGBoost_top3_genre,0.51,0.5201,0.514,0.5134,0.0142,939.2,42,GroupShuffleSplit,median,RobustScaler,351,6477,1517,FMA_Small,top-3 coverage genre_top,"{'clf__max_depth': 30, 'clf__min_child_weight': 8, 'clf__n_estimators': 300}",0.8233,,,,,,0.5274,0.4312
+XGBoost_OneVsRest_multilabel,,,,0.0,0.0,0.0,42,GroupShuffleSplit,median,RobustScaler,351,6477,1517,FMA_Small,multi-label sous-genres,"fixed (n_est=200, depth=5)",,0.1687,0.1154,0.0876,0.0404,0.2061,,
