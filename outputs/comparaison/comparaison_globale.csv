@@ -1,0 +1,5 @@
+model,f1_test,acc_test,bal_acc_test,worst_genre,worst_recall,best_genre,best_recall,f1_coherent,f1_ambigu,delta_mismatch
+LR (NB3),0.4656,0.4819,0.4702,Pop,0.195,Rock,0.641,0.4791,0.3959,0.0832
+RF (NB3),0.458,0.4693,0.4709,Pop,0.164,Folk,0.689,0.4805,0.3798,0.1008
+XGBoost (NB3BIS),0.4907,0.501,0.4946,Pop,0.211,Folk,0.613,0.5154,0.404,0.1114
+MLP (NB3TER),0.4644,0.4753,0.4705,Pop,0.18,Folk,0.622,0.4696,0.4105,0.0591

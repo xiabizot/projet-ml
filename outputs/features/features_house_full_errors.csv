@@ -1,0 +1,157 @@
+track_id,error,traceback
+98565,NoBackendError(),"Traceback (most recent call last):
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\librosa\core\audio.py"", line 176, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\librosa\core\audio.py"", line 222, in __soundfile_load
+    y = sf_desc.read(frames=frame_duration, dtype=dtype, always_2d=False).T
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\soundfile.py"", line 942, in read
+    frames = self._array_io('read', out, frames)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+soundfile.LibsndfileError: Unspecified internal error.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 193, in run_extraction
+    row = extract_one(int(tid), p)
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 151, in extract_one
+    feats = extract_features(path)
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 43, in extract_features
+    y, sr_ = librosa.load(path, mono=mono, sr=sr, duration=duration)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+audioread.exceptions.NoBackendError
+"
+98567,NoBackendError(),"Traceback (most recent call last):
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\librosa\core\audio.py"", line 176, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\librosa\core\audio.py"", line 222, in __soundfile_load
+    y = sf_desc.read(frames=frame_duration, dtype=dtype, always_2d=False).T
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\soundfile.py"", line 942, in read
+    frames = self._array_io('read', out, frames)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+soundfile.LibsndfileError: Unspecified internal error.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 193, in run_extraction
+    row = extract_one(int(tid), p)
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 151, in extract_one
+    feats = extract_features(path)
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 43, in extract_features
+    y, sr_ = librosa.load(path, mono=mono, sr=sr, duration=duration)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+audioread.exceptions.NoBackendError
+"
+98569,NoBackendError(),"Traceback (most recent call last):
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\librosa\core\audio.py"", line 176, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\librosa\core\audio.py"", line 222, in __soundfile_load
+    y = sf_desc.read(frames=frame_duration, dtype=dtype, always_2d=False).T
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\soundfile.py"", line 942, in read
+    frames = self._array_io('read', out, frames)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+soundfile.LibsndfileError: Unspecified internal error.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 193, in run_extraction
+    row = extract_one(int(tid), p)
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 151, in extract_one
+    feats = extract_features(path)
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 43, in extract_features
+    y, sr_ = librosa.load(path, mono=mono, sr=sr, duration=duration)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+audioread.exceptions.NoBackendError
+"
+99134,NoBackendError(),"Traceback (most recent call last):
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\librosa\core\audio.py"", line 176, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\librosa\core\audio.py"", line 209, in __soundfile_load
+    context = sf.SoundFile(path)
+              ^^^^^^^^^^^^^^^^^^
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\soundfile.py"", line 690, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+soundfile.LibsndfileError: Error opening 'c:\\Users\\maison\\Desktop\\DU SDA\\MACHINE LEARNING 2\\PROJET\\data\\raw\\fma_small\\fma_small\\099\\099134.mp3': File does not exist or is not a regular file (possibly a pipe?).
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 193, in run_extraction
+    row = extract_one(int(tid), p)
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 151, in extract_one
+    feats = extract_features(path)
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 43, in extract_features
+    y, sr_ = librosa.load(path, mono=mono, sr=sr, duration=duration)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+audioread.exceptions.NoBackendError
+"
+108925,NoBackendError(),"Traceback (most recent call last):
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\librosa\core\audio.py"", line 176, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\librosa\core\audio.py"", line 209, in __soundfile_load
+    context = sf.SoundFile(path)
+              ^^^^^^^^^^^^^^^^^^
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\soundfile.py"", line 690, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+soundfile.LibsndfileError: Error opening 'c:\\Users\\maison\\Desktop\\DU SDA\\MACHINE LEARNING 2\\PROJET\\data\\raw\\fma_small\\fma_small\\108\\108925.mp3': File does not exist or is not a regular file (possibly a pipe?).
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 193, in run_extraction
+    row = extract_one(int(tid), p)
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 151, in extract_one
+    feats = extract_features(path)
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 43, in extract_features
+    y, sr_ = librosa.load(path, mono=mono, sr=sr, duration=duration)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+audioread.exceptions.NoBackendError
+"
+133297,NoBackendError(),"Traceback (most recent call last):
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\librosa\core\audio.py"", line 176, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\librosa\core\audio.py"", line 209, in __soundfile_load
+    context = sf.SoundFile(path)
+              ^^^^^^^^^^^^^^^^^^
+  File ""c:\Users\maison\AppData\Local\Programs\Python\Python312\Lib\site-packages\soundfile.py"", line 690, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+soundfile.LibsndfileError: Error opening 'c:\\Users\\maison\\Desktop\\DU SDA\\MACHINE LEARNING 2\\PROJET\\data\\raw\\fma_small\\fma_small\\133\\133297.mp3': File does not exist or is not a regular file (possibly a pipe?).
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 193, in run_extraction
+    row = extract_one(int(tid), p)
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 151, in extract_one
+    feats = extract_features(path)
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Users\maison\AppData\Local\Temp\ipykernel_14768\1010591282.py"", line 43, in extract_features
+    y, sr_ = librosa.load(path, mono=mono, sr=sr, duration=duration)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+audioread.exceptions.NoBackendError
+"
