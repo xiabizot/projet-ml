@@ -29,10 +29,12 @@ spectrogrammes/
 *.zip
 *.pickle
 *.pkl
-*.joblib
 *.h5
 *.hdf5
 *.pth
+
+# --- Exception : artefacts agent (legers, necessaires pour Streamlit) ---
+!outputs/agent/*.joblib
 
 # --- Poubelle / brouillons ---
 poubelle/
