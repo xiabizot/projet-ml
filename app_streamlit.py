@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent / 'src'))
 from agent import (
     run_agent, load_models, load_features_data,
     get_recommendations, explain_with_claude,
-    translate_feature, SPECTRO_DIR, CNN_DIR
+    translate_feature, AudioCNN, SPECTRO_DIR, CNN_DIR
 )
 
 # =============================================
@@ -75,13 +75,16 @@ except Exception as e:
 # HEADER
 # =============================================
 IMG_DIR = Path(__file__).parent / 'images'
-logo_path = IMG_DIR / 'vecteezy_sound-wave-light-particles-sound-spectrum-dance_33164292.png'
-with open(logo_path, 'rb') as f:
-    logo_b64 = base64.b64encode(f.read()).decode()
 
-casque_path = IMG_DIR / 'favpng_c0c3bf5905f226c297cb84553cd58360.png'
-with open(casque_path, 'rb') as f:
-    casque_b64 = base64.b64encode(f.read()).decode()
+def load_image_b64(path):
+    try:
+        with open(path, 'rb') as f:
+            return base64.b64encode(f.read()).decode()
+    except FileNotFoundError:
+        return ''
+
+logo_b64 = load_image_b64(IMG_DIR / 'vecteezy_sound-wave-light-particles-sound-spectrum-dance_33164292.png')
+casque_b64 = load_image_b64(IMG_DIR / 'casque_small.png')
 
 st.markdown(f"""
 <div style="text-align:center; margin-bottom:1.5rem">
@@ -183,16 +186,13 @@ with tab_analyse:
             audio_bytes_play = st.session_state['uploaded_bytes']
 
         genre_line = f'<div style="color:#555; font-size:0.8rem; margin-top:2px">Genre reel : {r1["true_genre"]}</div>' if r1["true_genre"] != "?" else ""
-        st.markdown(f"""
-        <div style="display:flex; align-items:center; gap:14px; margin:8px 0; text-align:left">
-            <img src="data:image/png;base64,{casque_b64}" style="width:80px; height:80px; object-fit:contain; opacity:0.8">
-            <div>
-                <div style="font-size:1.1rem; font-weight:500">{r1["title"]}</div>
-                <div style="color:#888">{r1["artist"]}</div>
-                {genre_line}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div style="display:flex; align-items:center; gap:14px; margin:8px 0; text-align:left">
+<img src="data:image/png;base64,{casque_b64}" style="width:50px; height:50px; object-fit:contain; opacity:0.8">
+<div>
+<div style="font-size:1.1rem; font-weight:500">{r1["title"]}</div>
+<div style="color:#888">{r1["artist"]}</div>
+{genre_line}
+</div></div>""", unsafe_allow_html=True)
 
         if audio_bytes_play:
             st.audio(audio_bytes_play, format='audio/mp3')
@@ -312,6 +312,27 @@ with tab_explain:
         r2 = st.session_state['r2']
         shap_features = r2.get('shap_features', [])
 
+        # Claude en premier
+        st.markdown('')
+        _, col_claude, _ = st.columns([1, 2, 1])
+        with col_claude:
+            if st.button('Generer analyse Claude (optionnel)', use_container_width=True):
+                with st.spinner(''):
+                    expl = explain_with_claude(r2, mode='V2')
+                    expl_clean = expl.replace('**','').replace('*','').replace('#','').replace('`','')
+                st.markdown(f"""<div style="
+                    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                    border: 1px solid #2a2a4a;
+                    border-radius: 10px;
+                    padding: 20px 24px;
+                    margin: 12px 0;
+                    font-size: 0.85rem;
+                    color: #ccc;
+                    line-height: 1.7;
+                    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+                ">{expl_clean}</div>""", unsafe_allow_html=True)
+
+        st.markdown('')
         if shap_features:
             st.markdown('<div class="section-title">Ce que le modele a entendu</div>',
                         unsafe_allow_html=True)
@@ -335,6 +356,8 @@ with tab_explain:
 </div></div>""", unsafe_allow_html=True)
 
         # Grad-CAM
+        st.markdown('')
+        st.markdown('')
         tid = r2.get('track_id')
         if tid:
             spec_path = SPECTRO_DIR / f'{int(tid):06d}.npy'
@@ -351,24 +374,7 @@ with tab_explain:
                     import torch, torch.nn as nn, torch.nn.functional as F
                     import matplotlib.pyplot as plt, matplotlib.cm as cm_mpl, cv2
 
-                    class AudioCNN(nn.Module):
-                        def __init__(self, nc):
-                            super().__init__()
-                            self.conv1 = nn.Conv2d(1,16,3,padding=1); self.bn1 = nn.BatchNorm2d(16)
-                            self.conv2 = nn.Conv2d(16,32,3,padding=1); self.bn2 = nn.BatchNorm2d(32)
-                            self.conv3 = nn.Conv2d(32,64,3,padding=1); self.bn3 = nn.BatchNorm2d(64)
-                            self.conv4 = nn.Conv2d(64,128,3,padding=1); self.bn4 = nn.BatchNorm2d(128)
-                            self.pool = nn.MaxPool2d(2,2); self.adaptive_pool = nn.AdaptiveAvgPool2d((4,4))
-                            self.fc1 = nn.Linear(128*4*4,512); self.fc2 = nn.Linear(512,256)
-                            self.dropout = nn.Dropout(0.3); self.fc3 = nn.Linear(256,nc)
-                        def forward(self, x):
-                            x = self.pool(F.relu(self.bn1(self.conv1(x))))
-                            x = self.pool(F.relu(self.bn2(self.conv2(x))))
-                            x = self.pool(F.relu(self.bn3(self.conv3(x))))
-                            x = self.adaptive_pool(F.relu(self.bn4(self.conv4(x))))
-                            x = x.view(x.size(0),-1)
-                            x = F.relu(self.fc1(x)); x = self.dropout(x)
-                            x = F.relu(self.fc2(x)); return self.fc3(x)
+                    # AudioCNN importe depuis agent.py (source unique)
 
                     class GradCAM:
                         def __init__(self, model, layer):
@@ -436,15 +442,7 @@ with tab_explain:
                 except Exception as e:
                     st.caption(f'Grad-CAM non disponible : {e}')
 
-        # Claude
-        _, col_claude, _ = st.columns([1, 2, 1])
-        with col_claude:
-            if st.button('Generer explication Claude (optionnel)', use_container_width=True):
-                with st.spinner(''):
-                    expl = explain_with_claude(r2, mode='V2')
-                    expl_clean = expl.replace('**','').replace('*','').replace('#','').replace('`','')
-                st.markdown(f'<div style="font-size:0.8rem; color:#bbb; line-height:1.6">{expl_clean}</div>',
-                            unsafe_allow_html=True)
+        # (Claude deplace en haut de l'onglet)
 
 # =============================================
 # PROJET

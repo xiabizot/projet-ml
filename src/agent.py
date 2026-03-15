@@ -17,7 +17,43 @@ load_dotenv(Path(__file__).parent.parent / '.env', override=True)
 import numpy as np
 import pandas as pd
 import joblib
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from sklearn.metrics.pairwise import cosine_similarity
+
+
+# =============================================
+# Architecture CNN (identique NB4 — source unique)
+# =============================================
+class AudioCNN(nn.Module):
+    def __init__(self, num_classes=8):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 16, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(16)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm2d(64)
+        self.conv4 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.bn4 = nn.BatchNorm2d(128)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.adaptive_pool = nn.AdaptiveAvgPool2d((4, 4))
+        self.fc1 = nn.Linear(128 * 4 * 4, 512)
+        self.fc2 = nn.Linear(512, 256)
+        self.dropout = nn.Dropout(0.3)
+        self.fc3 = nn.Linear(256, num_classes)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.bn1(self.conv1(x))))
+        x = self.pool(F.relu(self.bn2(self.conv2(x))))
+        x = self.pool(F.relu(self.bn3(self.conv3(x))))
+        x = self.adaptive_pool(F.relu(self.bn4(self.conv4(x))))
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = F.relu(self.fc2(x))
+        return self.fc3(x)
 from sklearn.pipeline import Pipeline
 
 warnings.filterwarnings('ignore')
@@ -316,38 +352,6 @@ def _extract_cnn_embedding_from_spec(spec_path):
 
 def _run_cnn_extractor(spec_norm, m):
     """Passe un spectrogramme normalise dans le CNN et retourne l'embedding."""
-    import torch
-    import torch.nn as nn
-    import torch.nn.functional as F
-
-    class AudioCNN(nn.Module):
-        def __init__(self, num_classes):
-            super().__init__()
-            self.conv1 = nn.Conv2d(1, 16, kernel_size=3, padding=1)
-            self.bn1 = nn.BatchNorm2d(16)
-            self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
-            self.bn2 = nn.BatchNorm2d(32)
-            self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-            self.bn3 = nn.BatchNorm2d(64)
-            self.conv4 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-            self.bn4 = nn.BatchNorm2d(128)
-            self.pool = nn.MaxPool2d(2, 2)
-            self.adaptive_pool = nn.AdaptiveAvgPool2d((4, 4))
-            self.fc1 = nn.Linear(128 * 4 * 4, 512)
-            self.fc2 = nn.Linear(512, 256)
-            self.dropout = nn.Dropout(0.3)
-            self.fc3 = nn.Linear(256, num_classes)
-
-        def forward(self, x):
-            x = self.pool(F.relu(self.bn1(self.conv1(x))))
-            x = self.pool(F.relu(self.bn2(self.conv2(x))))
-            x = self.pool(F.relu(self.bn3(self.conv3(x))))
-            x = self.adaptive_pool(F.relu(self.bn4(self.conv4(x))))
-            x = x.view(x.size(0), -1)
-            x = F.relu(self.fc1(x))
-            x = self.dropout(x)
-            x = F.relu(self.fc2(x))
-            return self.fc3(x)
 
     class EmbExtractor(nn.Module):
         def __init__(self, model):

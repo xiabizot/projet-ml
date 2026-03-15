@@ -6,7 +6,10 @@
 
 ## Contexte
 
-Classifier automatiquement le genre musical (`genre_top`, 8 classes) de morceaux du dataset **FMA Small** (8 000 pistes, 30s, MP3).
+En streaming, prédire uniquement un genre principal est limité car les genres se chevauchent et les labels sont parfois ambigus.
+Jusqu’où peut-on classifier automatiquement à partir de features audio MP3, et comment exploiter le mismatch genre principal / sous-genres pour proposer un étiquetage plus informatif (top-k / multi-label) et interpréter les erreurs ?
+
+Le but : Classifier automatiquement le genre musical (`genre_top`, 8 classes) de morceaux du dataset **FMA Small** (8 000 pistes, 30s, MP3).
 
 Deux specificites orientent toute l'approche :
 - **Biais artiste** — le split officiel FMA ne garantit pas l'isolation par artiste. Solution : `GroupShuffleSplit` par artiste (seed=42, test=20%)
@@ -86,7 +89,7 @@ NB5 -> NB6                         Mismatch + Comparaison V1 (~30min)
 NB7 -> NB7_8000                    Transfer Learning PANNs (~1h GPU)
 NB8                                NLP (~20min)
 NB6BIS                             Comparaison tous modeles + curation (~5min)
-NB6TER                             Interpretabilite SHAP + GradCAM (~10min)
+NB6TER                             Interpretabilite SHAP + GradCAM (~10min, GPU pour GradCAM)
 NB9                                Agent IA -> genere outputs/agent/
 
 # Application
