@@ -68,12 +68,25 @@ PANNs   NLP     Tous       SHAP       Agent IA
 git clone <repo> && cd PROJET
 pip install -r requirements.txt
 
-# GPU (NB4 CNN) :
+# Lancer l'application Streamlit :
+streamlit run app_streamlit.py
+```
+
+L'app Streamlit fonctionne immediatement apres le clone (les modeles .joblib sont dans le repo).
+
+Pour les fonctionnalites avancees :
+
+```bash
+# GPU (NB4 CNN, NB7 PANNs) :
 pip install torch --index-url https://download.pytorch.org/whl/cu128
 
-# Cle API Anthropic (optionnel, pour explication Claude dans Streamlit) :
+# Cle API Anthropic (optionnel, pour analyse Claude dans Streamlit) :
 # Creer un fichier .env a la racine :
 # ANTHROPIC_API_KEY=sk-ant-...
+
+# Ecoute audio et Grad-CAM :
+# Necessitent les dossiers data/ et spectrogrammes/ (non versionnes, trop lourds)
+# A recuperer separement (Google Drive ou copie locale)
 ```
 
 ## Ordre d'execution
