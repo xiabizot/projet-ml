@@ -1,10 +1,12 @@
 # ============================================
 # Projet ML2 — Classification musicale FMA
+# AlgoRythms — Agent Double IA Multimodal
 # ============================================
 
 # --- Jupyter / IDE ---
 .ipynb_checkpoints/
 .vscode/
+.idea/
 
 # --- Python ---
 __pycache__/
@@ -13,7 +15,7 @@ __pycache__/
 *.egg-info/
 *.egg
 
-# --- Environments ---
+# --- Environments & secrets ---
 .env
 .venv/
 venv/
@@ -21,8 +23,9 @@ ENV/
 
 # --- Data brutes (trop volumineuses pour Git) ---
 data/
+spectrogrammes/
 
-# --- Fichiers lourds individuels ---
+# --- Fichiers lourds ---
 *.zip
 *.pickle
 *.pkl
@@ -30,10 +33,19 @@ data/
 *.h5
 *.hdf5
 *.pth
-spectrogrammes/
 
 # --- Poubelle / brouillons ---
 poubelle/
+outputs - Copie/
+
+# --- Docs de travail (non versionnés) ---
+*.docx
+*.pptx
+*.pdf
+~$*
+
+# --- Streamlit ---
+.streamlit/
 
 # --- Temporaire / caches ---
 .cache/
@@ -44,3 +56,6 @@ poubelle/
 # --- OS ---
 Thumbs.db
 .DS_Store
+
+# --- Scripts utilitaires (pas dans le livrable) ---
+create_nb9.py

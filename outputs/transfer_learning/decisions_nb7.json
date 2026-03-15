@@ -1,0 +1,16 @@
+{
+  "modele_panns": "CNN14 (AudioSet, panns_inference)",
+  "embed_dim": 2048,
+  "audio_sr": 22050,
+  "audio_duration_s": 30,
+  "audio_mono": true,
+  "prototype_n_genre": "full",
+  "split": "GroupShuffleSplit",
+  "test_size": 0.2,
+  "seed": 42,
+  "xgb_f1_macro": 0.6091,
+  "mlp_f1_macro": 0.5405,
+  "baseline_nb5_f1": 0.51,
+  "gain_vs_baseline_xgb": 0.0991,
+  "gain_vs_baseline_mlp": 0.0305
+}

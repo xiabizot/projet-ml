@@ -1,4 +1,5 @@
 # Projet ML2 — Classification de genres musicaux FMA
+# AlgoRythms — Agent Double IA Multimodal Musical
 # Python 3.10+
 
 # Core
@@ -9,14 +10,31 @@ scipy
 # Visualisation
 matplotlib
 seaborn
+plotly
 
 # Machine Learning
 scikit-learn
 xgboost
+shap
 
 # Audio
 librosa
 
-# Deep Learning (CPU — pour GPU voir README)
+# Deep Learning (CPU — pour GPU : pip install torch --index-url https://download.pytorch.org/whl/cu128)
 torch
 tqdm
+
+# Transfer Learning (NB7)
+panns-inference
+
+# NLP
+# (scikit-learn TfidfVectorizer, deja inclus)
+
+# App Streamlit (NB9)
+streamlit
+joblib
+python-dotenv
+opencv-python-headless
+
+# Claude API (optionnel — explication en langage naturel)
+anthropic

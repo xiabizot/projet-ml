@@ -1,88 +1,173 @@
-# Projet ML2 — Classification de genres musicaux (FMA)
+# Dream Stream Sciences — Classification de genres musicaux (FMA)
 
-Projet de groupe — Master Data Science & AI, Machine Learning 2 (2025-2026).
+**Projet ML2 — Sorbonne Data Analytics — Promotion 007 — Mars 2026**
 
-## Objectif
+---
 
-Classifier automatiquement le genre musical (`genre_top`, 8 classes) de morceaux du dataset **FMA Small** (8 000 tracks, 30 s, MP3).
+## Contexte
 
-## Dataset
+Classifier automatiquement le genre musical (`genre_top`, 8 classes) de morceaux du dataset **FMA Small** (8 000 pistes, 30s, MP3).
 
-**FMA: A Dataset for Music Analysis** — Defferrard et al., ISMIR 2017
-- 8 000 morceaux, 8 genres équilibrés (~1 000 chacun)
-- 6 tracks corrompues exclues → **7 994 exploitables**
-- [GitHub FMA](https://github.com/mdeff/fma) | [Paper (arXiv)](https://arxiv.org/abs/1612.01840)
+Deux specificites orientent toute l'approche :
+- **Biais artiste** — le split officiel FMA ne garantit pas l'isolation par artiste. Solution : `GroupShuffleSplit` par artiste (seed=42, test=20%)
+- **Mismatch labels** — 41,8% des pistes ont un `genre_top` absent de leurs sous-genres (label noise documente par les auteurs du dataset)
 
-## Problématique
+---
 
-Le dataset FMA présente deux spécificités qui orientent notre approche :
+## Architecture en 2 couches
 
-1. **Fuite par artiste** — Les splits officiels du paper (colonne `set.split`) ne garantissent pas l'isolation par artiste. Un même artiste peut figurer dans le train et le test, gonflant artificiellement les scores. Nous imposons un **`GroupShuffleSplit` par artiste** pour éliminer ce biais — un choix méthodologique délibéré, supérieur aux splits du paper.
-
-2. **Ambiguïté des sous-genres (mismatch)** — Certains morceaux portent des sous-genres contradictoires avec leur `genre_top` (ex. un morceau Rock tagué "Ambient", "Drone"). Cette incohérence dans les labels dégrade la classification. Nous formalisons et quantifions cet effet : les morceaux *cohérents* sont systématiquement mieux classés que les morceaux *ambigus*, quel que soit le modèle.
-
-Ces deux constats guident notre **protocole commun** et motivent l'exploration de plusieurs paradigmes complémentaires pour tester les limites de la classification sur ce dataset.
-
-## Protocole commun
-
-| Paramètre | Valeur |
-|---|---|
-| Split | `GroupShuffleSplit` par artiste (seed=42, test=20 %) |
-| Validation | `GridSearchCV` + `GroupKFold(5)` |
-| Métrique principale | **F1 macro** |
-| Preprocessing | `SimpleImputer(median)` → `RobustScaler` |
-| Reproductibilité | Seed fixe, indices train/test sauvegardés, CSV protocole 15 colonnes |
-
-## Résultats
-
-| Modèle | Notebook | F1 macro | Accuracy | Bal. Acc |
-|--------|----------|----------|----------|----------|
-| CNN log-mel | NB4 | **0.5324** | 0.5458 | 0.5289 |
-| XGBoost mismatch | NB5 | 0.5100 | 0.5201 | 0.5140 |
-| XGBoost (GridSearch) | NB3BIS | 0.4907 | 0.5010 | 0.4946 |
-| Logistic Regression | NB3 | 0.4656 | 0.4819 | 0.4702 |
-| MLP (GridSearch) | NB3TER | 0.4644 | 0.4753 | 0.4705 |
-| Random Forest | NB3 | 0.4580 | 0.4693 | 0.4709 |
-
-**Constats clés :**
-- Le CNN surpasse le plafond tabulaire en exploitant l'information temporelle des spectrogrammes
-- **Pop** est le genre le plus difficile (recall < 0.25 pour tous les modèles) — acoustiquement trop générique
-- L'hypothèse mismatch est **confirmée** sur les 4 modèles tabulaires (Δ F1 cohérents − ambigus > 0)
-- Les features spectrales (spectral centroid, contrast, bandwidth) dominent l'interprétabilité XGBoost et LR
-
-## Notebooks
-
-| # | Notebook | Contenu |
-|---|----------|---------|
-| 1 | `NOTEBOOK1_EDA.ipynb` | Exploration du dataset FMA Small |
-| 2 | `NOTEBOOK2_FEATURES.ipynb` | Extraction de 351 features audio (librosa) |
-| 2bis | `NOTEBOOK2BIS_V1_V2.ipynb` | Comparaison features V1 natif dataset vs V2 calculés, sélection |
-| 3 | `NOTEBOOK3_ML_TABULAIRE_BASE.ipynb` | Logistic Regression + Random Forest (GridSearchCV) |
-| 3bis | `NOTEBOOK3BIS_ML_TABULAIRE_XGBOOST.ipynb` | XGBoost (GridSearchCV) |
-| 3ter | `NOTEBOOK3TER_MLP_TABULAIRE.ipynb` | MLP sklearn (GridSearchCV) |
-| 4 | `NOTEBOOK4_DL_CNN.ipynb` | CNN sur spectrogrammes mel (PyTorch) |
-| 5 | `NOTEBOOK5_MISMATCH_SUBGENRES.ipynb` | Hypothèse mismatch sous-genres |
-| 6 | `NOTEBOOK6_COMPARAISON_GLOBALE.ipynb` | Comparaison globale (4 tabulaires + CNN) |
-
-## Structure
+Le projet est structure en deux niveaux, materialises par un agent IA double :
 
 ```
-outputs/
-├── features/          # features_V2.csv, corrélations
-├── resultats/         # CSV protocole (results_nb3.csv, ...)
-├── cnn/               # Modèle CNN, courbes, indices
-├── comparaison/       # Figures comparaison globale
-├── mismatch/          # Figures mismatch sous-genres
-└── mlp_tabulaire/     # Figures MLP
+COUCHE 1 — Agent N.1 (classification audio)
+NB1 ──> NB2 ──> NB3/3BIS/3TER ──> NB4 ──> NB5 ──> NB6
+EDA     Features   ML tabulaire     CNN    Mismatch  Comparaison
+        351D       LR,RF,XGB,MLP   logmel  sublabels + Reco cosine
+
+COUCHE 2 — Agent N.2 (enrichissement multimodal)
+NB7 ──> NB8 ──> NB6BIS ──> NB6TER ──> NB9
+PANNs   NLP     Tous       SHAP       Agent IA
+2048D   TFIDF   modeles    GradCAM    + Streamlit
+                + curation  biais
 ```
+
+**AlgoRythms Agent N.1** : XGBoost sur features audio (351D) + recommandation cosine CNN
+
+**AlgoRythms Agent N.2** : ensemble audio + NLP + PANNs + SHAP + curation + Claude API
+
+---
+
+## Resultats cles
+
+| Modele | Notebook | F1 macro | Approche |
+|--------|----------|----------|----------|
+| XGBoost PANNs | NB7 (8000) | **0.609** | Transfer Learning |
+| MLP PANNs | NB7 (8000) | 0.541 | Transfer Learning |
+| CNN log-mel | NB4 | 0.532 | Deep Learning |
+| LogReg TF-IDF NLP | NB8 | 0.527 | NLP (texte seul) |
+| XGBoost mismatch | NB5 | 0.510 | Features audio |
+| XGBoost GridSearch | NB3BIS | 0.491 | Features audio |
+| Logistic Regression | NB3 | 0.466 | Features audio |
+| MLP sklearn | NB3TER | 0.464 | Features audio |
+| Random Forest | NB3 | 0.458 | Features audio |
+
+**Enseignements** :
+- Le plafond tabulaire (~0.49) est une limite de representation, pas de modele
+- Le NLP bat l'audio tabulaire (F1 0.527 vs 0.491) — resultat inedit sur FMA
+- Le transfer learning (PANNs) domine toutes les approches
+- Pop est inclassable acoustiquement (genre commercial, pas sonore)
+
+---
 
 ## Installation
 
 ```bash
+git clone <repo> && cd PROJET
 pip install -r requirements.txt
+
+# GPU (NB4 CNN) :
+pip install torch --index-url https://download.pytorch.org/whl/cu128
+
+# Cle API Anthropic (optionnel, pour explication Claude dans Streamlit) :
+# Creer un fichier .env a la racine :
+# ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-Pour le GPU (PyTorch CUDA, notebook 4) :
+## Ordre d'execution
+
+```
+# Couche 1
+NB1 -> NB2 -> NB2BIS               Fondations (~1h)
+NB3 -> NB3BIS -> NB3TER            ML tabulaire (~30min)
+NB4                                 CNN (~3h, GPU recommande)
+NB5 -> NB6                         Mismatch + Comparaison V1 (~30min)
+
+# Couche 2
+NB7 -> NB7_8000                    Transfer Learning PANNs (~1h GPU)
+NB8                                NLP (~20min)
+NB6BIS                             Comparaison tous modeles + curation (~5min)
+NB6TER                             Interpretabilite SHAP + GradCAM (~10min)
+NB9                                Agent IA -> genere outputs/agent/
+
+# Application
+streamlit run app_streamlit.py
+```
+
+## Structure
+
+```
+PROJET/
+├── NOTEBOOK1_EDA.ipynb
+├── NOTEBOOK2_FEATURES.ipynb
+├── NOTEBOOK2BIS_V1_V2.ipynb
+├── NOTEBOOK3_ML_TABULAIRE_BASE.ipynb
+├── NOTEBOOK3BIS_ML_TABULAIRE_XGBOOST.ipynb
+├── NOTEBOOK3TER_MLP_TABULAIRE.ipynb
+├── NOTEBOOK4_DL_CNN.ipynb
+├── NOTEBOOK5_MISMATCH_SUBGENRES.ipynb
+├── NOTEBOOK6_COMPARAISON_GLOBALE.ipynb
+├── NOTEBOOK6BIS_COMPARAISON_TOUS_MODELES.ipynb
+├── NOTEBOOK6TER_INTERPRETABILITE.ipynb
+├── NOTEBOOK7_TRANSFER_LEARNING.ipynb
+├── NOTEBOOK7_TRANSFER_LEARNING_8000.ipynb
+├── NOTEBOOK8_NLP.ipynb
+├── NOTEBOOK9_AGENT_IA.ipynb
+│
+├── app_streamlit.py                 Interface Streamlit (AlgoRythms)
+├── src/
+│   └── agent.py                     Logique metier agent IA
+│
+├── images/                          Visuels app Streamlit
+│
+├── outputs/
+│   ├── features/                    features_V2.csv (351 features)
+│   ├── resultats/                   CSV protocole (results_nb*.csv)
+│   ├── cnn/                         Modele CNN + embeddings 256D
+│   ├── comparaison/                 Graphiques NB6/NB6BIS
+│   ├── interpretabilite/            SHAP + GradCAM (NB6TER)
+│   ├── curation/                    Outliers IsolationForest (NB6BIS)
+│   ├── transfer_learning/           PANNs embeddings + resultats (NB7)
+│   ├── nlp/                         TF-IDF + ablation (NB8)
+│   ├── mlp_tabulaire/               GridSearch MLP (NB3TER)
+│   └── agent/                       Artefacts Streamlit (.joblib)
+│
+├── data/                            Donnees brutes (non versionne)
+├── spectrogrammes/                  Spectrogrammes log-mel (non versionne)
+├── requirements.txt
+├── .gitignore
+└── .env                             Cle API Anthropic (non versionne)
+```
+
+## Dataset
+
+FMA: A Dataset for Music Analysis — Defferrard et al., ISMIR 2017
+- GitHub : https://github.com/mdeff/fma
+- Paper : https://arxiv.org/abs/1612.01840
+- 6 pistes corrompues documentees (wiki errata) — retrouvees et confirmees dans NB1
+
+## Decisions methodologiques
+
+| Decision | Valeur | Justification |
+|----------|--------|---------------|
+| Split | GroupShuffleSplit par artiste | Evite le leakage artiste (superieur au split officiel FMA) |
+| Seed | 42 | Reproductibilite |
+| Metrique | F1 macro | Equilibre entre genres desequilibres |
+| Imputation | SimpleImputer(median) via Pipeline | Pas de leakage train/test |
+| Scaling | RobustScaler | Robuste aux outliers |
+| Validation | GridSearchCV + GroupKFold(5) | Coherent avec le split principal |
+
+## Application Streamlit
+
+**AlgoRythms** — Agent Double IA Multimodal Musical
+Developpe par Dream Stream Sciences
+
+- Classification par 2 agents (audio seul vs ensemble multimodal)
+- Ecoute du morceau
+- Recommandation par similarite cosinus (embeddings CNN 256D)
+- Explicabilite SHAP + Grad-CAM
+- Upload MP3 externe
+- Explication Claude API (optionnel)
+
 ```bash
-pip install torch --index-url https://download.pytorch.org/whl/cu128
+streamlit run app_streamlit.py
 ```

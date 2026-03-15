@@ -1,0 +1,3 @@
+model,f1_test,acc_test,bal_acc_test,f1_cv_mean,f1_cv_std,duration_s,seed,split,imputer,scaler,n_features,n_train,n_test,dataset
+LogReg_TF-IDF_NLP_genre_top,0.5274,0.5491,0.534,0.5335,0.0508,4.8,42,GroupShuffleSplit,None,None,10000,6477,1517,FMA_Small
+XGBoost_TF-IDF_NLP_genre_top,0.4774,0.4977,0.4789,0.5098,0.0302,2712.8,42,GroupShuffleSplit,None,None,10000,6477,1517,FMA_Small
