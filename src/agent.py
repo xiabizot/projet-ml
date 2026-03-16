@@ -471,11 +471,19 @@ def get_recommendations(track_id=None, mp3_path=None, n=5):
 # =============================================
 # CLAUDE API
 # =============================================
-def explain_with_claude(result, mode='V1'):
+def explain_with_claude(result=None, mode='V1', prompt_override=None):
     """Explication Claude API. Retourne un str."""
     try:
         import anthropic
         client = anthropic.Anthropic()
+
+        if prompt_override:
+            resp = client.messages.create(
+                model='claude-sonnet-4-20250514',
+                max_tokens=500,
+                messages=[{'role': 'user', 'content': prompt_override}]
+            )
+            return resp.content[0].text
 
         topk_str = ', '.join(
             f"{g} ({p:.1%})" for g, p in result.get('top_k', [])[:3]
