@@ -623,17 +623,21 @@ def run_agent(track_id=None, mp3_path=None, mode='V1', with_claude=False):
         result['pred_nlp'] = m['le'].inverse_transform([proba_nlp.argmax()])[0]
         result['proba_nlp'] = proba_nlp
 
-        proba_ensemble = m['w_audio'] * proba_audio + m['w_nlp'] * proba_nlp
-
         # PANNs
-        if (m['panns_xgb'] is not None and track_id is not None
-                and track_id in m['panns_dict']):
+        has_panns = (m['panns_xgb'] is not None and track_id is not None
+                     and track_id in m['panns_dict'])
+
+        if has_panns:
             X_panns = np.array(m['panns_dict'][track_id]).reshape(1, -1)
             proba_panns = m['panns_xgb'].predict_proba(X_panns)[0]
             proba_ensemble = (m['w_audio'] * proba_audio
                               + m['w_nlp'] * proba_nlp
                               + m['w_panns'] * proba_panns)
             result['pred_panns'] = m['le'].inverse_transform([proba_panns.argmax()])[0]
+        else:
+            # Renormaliser sans PANNs
+            w_sum = m['w_audio'] + m['w_nlp']
+            proba_ensemble = (m['w_audio'] / w_sum) * proba_audio + (m['w_nlp'] / w_sum) * proba_nlp
 
         result['proba_v2'] = proba_ensemble
         pred_v2_enc = proba_ensemble.argmax()

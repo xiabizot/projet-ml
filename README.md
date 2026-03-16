@@ -1,12 +1,12 @@
-# Dream Stream Sciences — Classification de genres musicaux (FMA)
+# Dream Stream — Classification de genres musicaux (FMA Small)
 
-**Projet ML2 — Sorbonne Data Analytics — Promotion 007 — Mars 2026**
+**Projet ML2 — DU SDA — Promotion 007 — Mars 2026**
 
 ---
 
 ## Contexte
 
-En streaming, prédire uniquement un genre principal est limité car les genres se chevauchent et les labels sont parfois ambigus.
+En streaming musical, prédire uniquement un genre principal est limité car les genres se chevauchent et les labels sont parfois ambigus.
 Jusqu’où peut-on classifier automatiquement à partir de features audio MP3, et comment exploiter le mismatch genre principal / sous-genres pour proposer un étiquetage plus informatif (top-k / multi-label) et interpréter les erreurs ?
 
 Le but : Classifier automatiquement le genre musical (`genre_top`, 8 classes) de morceaux du dataset **FMA Small** (8 000 pistes, 30s, MP3).
@@ -17,12 +17,12 @@ Deux specificites orientent toute l'approche :
 
 ---
 
-## Architecture en 2 couches
+## Architecture du projet en 2 couches
 
-Le projet est structure en deux niveaux, materialises par un agent IA double :
+Le projet est structure en deux niveaux, materialises in fine par un agent IA double :
 
 ```
-COUCHE 1 — Agent N.1 (classification audio)
+COUCHE 1 — Agent N.1 (classification audio + recommandation simplifiée)
 NB1 ──> NB2 ──> NB3/3BIS/3TER ──> NB4 ──> NB5 ──> NB6
 EDA     Features   ML tabulaire     CNN    Mismatch  Comparaison
         351D       LR,RF,XGB,MLP   logmel  sublabels + Reco cosine
@@ -39,6 +39,57 @@ PANNs   NLP     Tous       SHAP       Agent IA
 **AlgoRythms Agent N.2** : ensemble audio + NLP + PANNs + SHAP + curation + Claude API
 
 ---
+
+## Perimetres du projet
+
+### Projet evalue (niveau 1)
+
+Les notebooks suivants constituent le perimetre réel du projet ML soumis a evaluation du DU SDA:
+
+| Notebook | Contenu |
+|----------|---------|
+| NB1 | EDA, exploration du dataset FMA Small |
+| NB2 | Extraction des 351 features audio (librosa) |
+| NB2BIS | Comparaison features V1 FMA vs V2 maison |
+| NB3 | Logistic Regression + Random Forest (GridSearchCV) |
+| NB3BIS | XGBoost (GridSearchCV) |
+| NB3TER | MLP sklearn (GridSearchCV) |
+| NB4 | CNN log-mel (PyTorch) |
+| NB5 | Analyse mismatch + classification multi-label |
+| NB6 | Comparaison globale des modeles + recommandation cosinus |
+
+L'application Streamlit en niveau 1 est proposee en demonstration comme prolongement applicatif du pipeline de classification et de recommandation par similarite acoustique.
+
+Comme suit :
+- XGBoost → classification genre_top (F1 = 0.491, features audio 351D)
+- Embeddings CNN 256D → recommandation cosinus (5 pistes similaires, précision 50.3%)
+- Flag mismatch → signale si le genre_top est absent des sous-genres
+
+### Explorations complementaires (niveau 2 hors perimetre evalue)
+
+Les notebooks suivants sont des explorations complémentaires, non soumises a evaluation :
+
+| Notebook | Contenu |
+|----------|---------|
+| NB7 / NB7_8000 | Transfer Learning PANNs (prototype + full) |
+| NB8 | NLP sur metadonnees textuelles (TF-IDF) |
+| NB6BIS | Comparaison tous modeles + curation (IsolationForest) |
+| NB6TER | Interpretabilite (SHAP, Grad-CAM, biais corpus) |
+| NB9 | Agent IA double + export artefacts Streamlit |
+
+L'application Streamlit ajoute en niveau 2 les modeles de transfer learning (PANNs), le NLP sur metadonnees et l'interpretabilite SHAP pour enrichir la classification. Chaque modèle vote pour un genre. Le vote de chacun compte proportionnellement à sa performance (score F1) : le meilleur modèle a plus de poids. Les votes sont normalisés pour que le total fasse 100%.
+
+Comme suit :
+- XGBoost → classification genre_top (poids 32% dans l'ensemble)
+- PANNs → Agent V2 utilise XGBoost PANNs (poids 38% dans l'ensemble)
+- NLP → Agent V2 utilise LogReg TF-IDF (poids 30% dans l'ensemble)
+- SHAP → onglet Explicabilité, barres d'impact par feature
+- Grad-CAM → onglet Explicabilité, spectrogrammes CNN
+- Recommandation cosinus → onglet Recommandation, embeddings CNN 256D
+- Claude API → explication en langage naturel
+
+---
+
 
 ## Resultats cles
 
@@ -59,6 +110,14 @@ PANNs   NLP     Tous       SHAP       Agent IA
 - Le NLP bat l'audio tabulaire (F1 0.527 vs 0.491) — resultat inedit sur FMA
 - Le transfer learning (PANNs) domine toutes les approches
 - Pop est inclassable acoustiquement (genre commercial, pas sonore)
+
+Conclusion principale :
+Le facteur limitant n'est pas le modèle mais la représentation :
+- features agrégées → plafond F1 ~0.49
+- spectrogrammes CNN → 0.53
+- embeddings pré-entraînés PANNs → 0.61
+
+La performance d'un modèle dépend moins de l'algorithme que de la représentation des données : 4 modèles tabulaires plafonnent au même score malgré des architectures très différentes, tandis que le passage aux spectrogrammes (CNN) puis aux embeddings pré-entraînés (PANNs) débloque successivement ce plafond.
 
 ---
 
